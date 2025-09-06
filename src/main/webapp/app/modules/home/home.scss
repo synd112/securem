@@ -1,10 +1,14 @@
-/* ==========================================================================
-Main page styles
-========================================================================== */
-.hipster {
-  display: inline-block;
-  width: 100%;
-  height: 497px;
-  background: url('/content/images/jhipster_family_member_2.svg') no-repeat center top;
-  background-size: contain;
+.home-page .vehicle-img {
+  max-width: 90%; // scale better with column
+  height: auto;
+  display: block;
+  margin: 0 auto;
+  object-fit: contain; // keeps proportions
+}
+
+.home-page .image-col {
+  display: flex;
+  align-items: center; // vertical centering
+  justify-content: center;
+  padding: 1rem;
 }

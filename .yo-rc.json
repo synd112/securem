@@ -1,0 +1,33 @@
+{
+  "generator-jhipster": {
+    "applicationType": "microservice",
+    "authenticationType": "jwt",
+    "baseName": "securem",
+    "buildTool": "maven",
+    "cacheProvider": "no",
+    "clientFramework": "react",
+    "clientTestFrameworks": [],
+    "clientTheme": "brite",
+    "clientThemeVariant": "primary",
+    "creationTimestamp": 1757350503240,
+    "databaseType": "sql",
+    "devDatabaseType": "mysql",
+    "enableHibernateCache": null,
+    "enableTranslation": false,
+    "entities": [],
+    "feignClient": false,
+    "jhipsterVersion": "8.11.0",
+    "jwtSecretKey": "NTJlMjBiZGQ4N2EwZDE5MWZjMDUzZjBiNWUxNmZiYzRlYzljMjE3MTZlZGVlMWIyYmM1MjRmZWQ4MzgzYjBkOTNlNTYzNWI5MWI4NTExMDUwM2VmNTYwYTI0YjhjN2FjMGQxNjY1MThhNTJjMGI1NDg2ZWRiMTQwMjgxM2UzZDI=",
+    "microfrontend": null,
+    "microfrontends": [],
+    "nativeLanguage": "en",
+    "packageName": "com.synd.com",
+    "prodDatabaseType": "mysql",
+    "reactive": false,
+    "serverPort": "8080",
+    "serviceDiscoveryType": "consul",
+    "syncUserWithIdp": null,
+    "testFrameworks": [],
+    "withAdminUi": true
+  }
+}

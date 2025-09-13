@@ -50,6 +50,8 @@ spring:
     password:
     hikari:
       poolName: Hikari
+      maximum-pool-size: 10
+      minimum-idle: 5
       auto-commit: false
       data-source-properties:
         cachePrepStmts: true

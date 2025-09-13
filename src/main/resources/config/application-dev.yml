@@ -62,6 +62,7 @@ spring:
     hikari:
       poolName: Hikari
       auto-commit: false
+      maximum-pool-size: 10
       data-source-properties:
         cachePrepStmts: true
         prepStmtCacheSize: 250

@@ -1,17 +1,8 @@
-import React, { useEffect } from 'react';
-// eslint-disable-line
+import React from 'react';
 
-import MenuItem from 'app/shared/layout/menus/menu-item'; // eslint-disable-line
-import { addTranslationSourcePrefix } from 'app/shared/reducers/locale';
-import { useAppDispatch, useAppSelector } from 'app/config/store';
+import MenuItem from 'app/shared/layout/menus/menu-item';
 
 const EntitiesMenu = () => {
-  const lastChange = useAppSelector(state => state.locale.lastChange);
-  const dispatch = useAppDispatch();
-  useEffect(() => {
-    dispatch(addTranslationSourcePrefix('services/securem/'));
-  }, [lastChange]);
-
   return (
     <>
       {/* prettier-ignore */}

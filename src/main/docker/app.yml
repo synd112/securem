@@ -1,6 +1,17 @@
 # This configuration is intended for development purpose, it's **your** responsibility to harden it for production
 name: securem
 services:
+  # HAProxy load balancer
+  haproxy:
+    image: haproxy:2.8
+    volumes:
+      - ./haproxy.cfg:/usr/local/etc/haproxy/haproxy.cfg:ro
+    ports:
+      - '80:80'
+    depends_on:
+      - app
+
+  # App service - will be scaled with --scale app=N
   app:
     image: securem
     environment:
@@ -9,8 +20,9 @@ services:
       - MANAGEMENT_PROMETHEUS_METRICS_EXPORT_ENABLED=true
       - SPRING_DATASOURCE_URL=jdbc:mysql://mysql:3306/securem?useUnicode=true&characterEncoding=utf8&useSSL=false&useLegacyDatetimeCode=false&createDatabaseIfNotExist=true
       - SPRING_LIQUIBASE_URL=jdbc:mysql://mysql:3306/securem?useUnicode=true&characterEncoding=utf8&useSSL=false&useLegacyDatetimeCode=false&createDatabaseIfNotExist=true
-    ports:
-      - 127.0.0.1:8080:8080
+    # Don't publish port to host when scaling - only expose internally
+    expose:
+      - 8080
     healthcheck:
       test:
         - CMD
@@ -23,6 +35,7 @@ services:
     depends_on:
       mysql:
         condition: service_healthy
+
   mysql:
     extends:
       file: ./mysql.yml

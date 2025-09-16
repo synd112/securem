@@ -225,18 +225,218 @@ For more information refer to [Using Docker and Docker-Compose][], this page als
 
 To configure CI for your project, run the ci-cd sub-generator (`jhipster ci-cd`), this will let you generate configuration files for a number of Continuous Integration systems. Consult the [Setting up Continuous Integration][] page for more information.
 
-[JHipster Homepage and latest documentation]: https://www.jhipster.tech
-[JHipster 8.11.0 archive]: https://www.jhipster.tech/documentation-archive/v8.11.0
-[Using JHipster in development]: https://www.jhipster.tech/documentation-archive/v8.11.0/development/
-[Using Docker and Docker-Compose]: https://www.jhipster.tech/documentation-archive/v8.11.0/docker-compose
-[Using JHipster in production]: https://www.jhipster.tech/documentation-archive/v8.11.0/production/
-[Running tests page]: https://www.jhipster.tech/documentation-archive/v8.11.0/running-tests/
-[Code quality page]: https://www.jhipster.tech/documentation-archive/v8.11.0/code-quality/
-[Setting up Continuous Integration]: https://www.jhipster.tech/documentation-archive/v8.11.0/setting-up-ci/
-[Node.js]: https://nodejs.org/
-[NPM]: https://www.npmjs.com/
-[Webpack]: https://webpack.github.io/
-[BrowserSync]: https://www.browsersync.io/
-[Jest]: https://jestjs.io
-[Leaflet]: https://leafletjs.com/
-[DefinitelyTyped]: https://definitelytyped.org/
+## Deploying with Docker
+
+This application supports a modern deployment architecture where the frontend (Nginx) and backend (Spring Boot) components can be deployed and scaled independently.
+
+### Prerequisites
+
+- Docker and Docker Compose installed
+- Java 17 or later
+- Node.js (for frontend development)
+
+### Building the Application Components
+
+#### Building the Backend (Spring Boot Application)
+
+1. Build the backend JAR file:
+
+```bash
+./mvnw -Pprod clean verify
+```
+
+2. Build the Docker image for the backend:
+
+```bash
+./mvnw -Pprod jib:dockerBuild
+```
+
+#### Building the Frontend (Nginx)
+
+1. Build the frontend production assets:
+
+```bash
+./npmw run build
+```
+
+The frontend assets will be generated in the `target/classes/static` directory, which will be mounted to the Nginx container.
+
+### Deploying the Application
+
+You can deploy the entire application (frontend, backend, and database) using Docker Compose:
+
+```bash
+cd src/main/docker
+docker-compose -f app-separated.yml up -d
+```
+
+This will start one instance of each service defined in the `app-separated.yml` file.
+
+### Scaling Services Independently
+
+One of the key advantages of this architecture is the ability to scale frontend and backend services independently.
+
+#### Scaling the Backend
+
+To scale the backend service to multiple instances (e.g., 3 instances):
+
+```bash
+docker-compose -f src/main/docker/app-separated.yml up -d --scale backend=3
+```
+
+This will start 3 instances of the backend service. The Nginx service will automatically distribute requests across all backend instances using Docker's built-in service discovery and DNS resolution.
+
+#### Scaling the Frontend
+
+To scale the frontend service to multiple instances (e.g., 2 instances):
+
+```bash
+docker-compose -f src/main/docker/app-separated.yml up -d --scale frontend=2
+```
+
+Note: When scaling the frontend, you'll need an additional load balancer (such as a cloud provider's load balancer) in front of your Nginx instances to distribute incoming traffic.
+
+### Verifying Deployed Services
+
+To check the status of your deployed services:
+
+```bash
+docker-compose -f src/main/docker/app-separated.yml ps
+```
+
+To view logs from a specific service:
+
+```bash
+# View backend logs
+docker-compose -f src/main/docker/app-separated.yml logs backend
+
+# View frontend logs
+docker-compose -f src/main/docker/app-separated.yml logs frontend
+```
+
+### Deploying Frontend and Backend Separately
+
+For completely independent deployment and scaling of frontend and backend, you can create separate Docker Compose files:
+
+#### Backend Only Deployment (backend.yml)
+
+Create a new file `src/main/docker/backend.yml`:
+
+```yaml
+name: securem-backend
+services:
+  backend:
+    image: securem:latest
+    environment:
+      - SPRING_PROFILES_ACTIVE=prod
+      - MANAGEMENT_METRICS_EXPORT_PROMETHEUS_ENABLED=true
+      - SPRING_DATASOURCE_URL=jdbc:mysql://mysql:3306/securem?useUnicode=true&characterEncoding=utf8&useSSL=false&useLegacyDatetimeCode=false&serverTimezone=UTC&createDatabaseIfNotExist=true
+      - SPRING_LIQUIBASE_URL=jdbc:mysql://mysql:3306/securem?useUnicode=true&characterEncoding=utf8&useSSL=false&useLegacyDatetimeCode=false&serverTimezone=UTC&createDatabaseIfNotExist=true
+    ports:
+      - '8080:8080'
+    depends_on:
+      - mysql
+    networks:
+      - app-network
+
+  mysql:
+    image: mysql:8.0.33
+    volumes:
+      - mysql-data:/var/lib/mysql
+    environment:
+      - MYSQL_ALLOW_EMPTY_PASSWORD=yes
+      - MYSQL_DATABASE=securem
+    command: mysqld --lower_case_table_names=1 --skip-ssl --character_set_server=utf8mb4 --explicit_defaults_for_timestamp
+    networks:
+      - app-network
+
+volumes:
+  mysql-data:
+
+networks:
+  app-network:
+    driver: bridge
+```
+
+Deploy and scale backend:
+
+```bash
+docker-compose -f src/main/docker/backend.yml up -d --scale backend=3
+```
+
+#### Frontend Only Deployment (frontend.yml)
+
+Create a new file `src/main/docker/frontend.yml`:
+
+```yaml
+name: securem-frontend
+services:
+  frontend:
+    image: nginx:alpine
+    ports:
+      - '80:80'
+    volumes:
+      - ../webapp/dist/:/usr/share/nginx/html/
+      - ./nginx/nginx.conf:/etc/nginx/conf.d/default.conf
+    environment:
+      - BACKEND_API_URL=http://backend-service-url:8080
+    networks:
+      - frontend-network
+
+networks:
+  frontend-network:
+    driver: bridge
+```
+
+Deploy and scale frontend:
+
+```bash
+docker-compose -f src/main/docker/frontend.yml up -d --scale frontend=2
+```
+
+### Load Testing Your Scaled Deployment
+
+To verify that your load balancing is working correctly across multiple backend instances, you can perform a simple load test:
+
+```bash
+# Install Apache Benchmark tool (if not already installed)
+# For macOS:
+brew install apache-bench
+
+# For Ubuntu/Debian:
+apt-get install apache2-utils
+
+# Run a load test (100 requests with 10 concurrent connections)
+ab -n 100 -c 10 http://localhost/api/your-endpoint
+```
+
+Monitor the logs of your backend instances to verify that requests are being distributed across all instances.
+
+## Troubleshooting
+
+### Container Networking Issues
+
+If you're having issues with containers communicating with each other:
+
+```bash
+# Check the Docker networks
+docker network ls
+
+# Inspect the app-network
+docker network inspect docker_app-network
+```
+
+### Checking Nginx Configuration
+
+To verify your Nginx configuration is correct:
+
+```bash
+# Exec into the Nginx container
+docker exec -it securem-frontend-1 sh
+
+# Check the Nginx configuration
+nginx -t
+
+# View the Nginx logs
+cat /var/log/nginx/error.log
+```

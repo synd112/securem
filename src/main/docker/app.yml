@@ -1,11 +1,12 @@
 # This configuration is intended for development purpose, it's **your** responsibility to harden it for production
 name: securem
 services:
-  # HAProxy load balancer
-  haproxy:
-    image: haproxy:2.8
+  # Nginx for static content and API routing
+  nginx:
+    image: nginx:alpine
     volumes:
-      - ./haproxy.cfg:/usr/local/etc/haproxy/haproxy.cfg:ro
+      - ./nginx/nginx.conf:/etc/nginx/conf.d/default.conf
+      - ../webapp/dist/:/usr/share/nginx/html/
     ports:
       - '80:80'
     depends_on:
